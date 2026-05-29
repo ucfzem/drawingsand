@@ -234,6 +234,167 @@ var canvas, ctx, wrapper;
 var isDrawing = false;
 var lastX, lastY;
 var dpr = 1;
+var soundThrottle = 0;
+var soundThrottle = 0;
+
+// ─── Sound Engine ─────────────────────────────────────────────────────────
+var Sound = {};
+(function(){
+  var actx = null;
+  function getCtx() {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+
+  function noiseBuffer(ctx, len) {
+    var sr = ctx.sampleRate;
+    var buf = ctx.createBuffer(1, sr * len, sr);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    return buf;
+  }
+
+  function playNoise(ctx, duration, gain, freq, type) {
+    var src = ctx.createBufferSource();
+    src.buffer = noiseBuffer(ctx, duration);
+    var fil = ctx.createBiquadFilter();
+    fil.type = type || 'lowpass';
+    fil.frequency.value = freq || 2000;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(gain || 0.1, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    src.connect(fil); fil.connect(g); g.connect(ctx.destination);
+    src.start(ctx.currentTime);
+    src.stop(ctx.currentTime + duration);
+  }
+
+  Sound.draw = function() {
+    try {
+      var ctx = getCtx();
+      playNoise(ctx, 0.08, 0.04, 800, 'lowpass');
+      // add a thin scratch
+      var src2 = ctx.createBufferSource();
+      src2.buffer = noiseBuffer(ctx, 0.06);
+      var fil2 = ctx.createBiquadFilter();
+      fil2.type = 'bandpass';
+      fil2.frequency.value = 3000 + Math.random() * 1500;
+      fil2.Q.value = 2;
+      var g2 = ctx.createGain();
+      g2.gain.setValueAtTime(0.015, ctx.currentTime);
+      g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+      src2.connect(fil2); fil2.connect(g2); g2.connect(ctx.destination);
+      src2.start(ctx.currentTime);
+      src2.stop(ctx.currentTime + 0.06);
+    } catch(e){}
+  };
+
+  Sound.erase = function() {
+    try {
+      var ctx = getCtx();
+      playNoise(ctx, 0.1, 0.03, 1200, 'lowpass');
+    } catch(e){}
+  };
+
+  Sound.place = function() {
+    try {
+      var ctx = getCtx();
+      var osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.1);
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.12, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.12);
+    } catch(e){}
+  };
+
+  Sound.wave = function() {
+    try {
+      var ctx = getCtx();
+      // Low rumble
+      var osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(80, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 1.5);
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.08, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 1.5);
+      // Shhh (wave wash)
+      playNoise(ctx, 1.2, 0.06, 2500, 'lowpass');
+      playNoise(ctx, 0.8, 0.04, 4000, 'bandpass');
+    } catch(e){}
+  };
+
+  Sound.clear = function() {
+    try {
+      var ctx = getCtx();
+      var osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.1, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } catch(e){}
+  };
+
+  Sound.undo = function() {
+    try {
+      var ctx = getCtx();
+      var osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(200, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.12);
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.06, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.12);
+    } catch(e){}
+  };
+
+  Sound.save = function() {
+    try {
+      var ctx = getCtx();
+      var osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.04);
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.08, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+    } catch(e){}
+  };
+
+  Sound.click = function() {
+    try {
+      var ctx = getCtx();
+      var osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = 1000;
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.04, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.04);
+    } catch(e){}
+  };
+})();
 
 // ─── Init ─────────────────────────────────────────────────────────────────
 function init() {
@@ -252,6 +413,7 @@ function init() {
   var modes = ['drawMode', 'eraseMode', 'dragMode'];
   function setMode(id, mode, cursor) {
     document.getElementById(id).addEventListener('click', function() {
+      Sound.click();
       state.mode = mode;
       modes.forEach(function(m) { document.getElementById(m).classList.toggle('active', m === id); });
       canvas.style.cursor = cursor;
@@ -261,10 +423,10 @@ function init() {
   setMode('eraseMode', 'erase', 'cell');
   setMode('dragMode', 'drag', 'grab');
 
-  document.getElementById('undoBtn').addEventListener('click', undo);
-  document.getElementById('clearBtn').addEventListener('click', clearCanvas);
-  document.getElementById('waveBtn').addEventListener('click', waveAnimation);
-  document.getElementById('saveBtn').addEventListener('click', saveImage);
+  document.getElementById('undoBtn').addEventListener('click', function(){ Sound.click(); undo(); });
+  document.getElementById('clearBtn').addEventListener('click', function(){ Sound.click(); clearCanvas(); });
+  document.getElementById('waveBtn').addEventListener('click', function(){ Sound.click(); waveAnimation(); });
+  document.getElementById('saveBtn').addEventListener('click', function(){ Sound.click(); saveImage(); });
 
   resize();
   window.addEventListener('resize', resize);
@@ -451,6 +613,13 @@ function onPointerUp(e) {
 }
 
 function drawAt(x, y, dot) {
+  // Throttled sound
+  var now = Date.now();
+  if (now - soundThrottle > 80) {
+    soundThrottle = now;
+    if (state.mode === 'draw') Sound.draw();
+    else if (state.mode === 'erase') Sound.erase();
+  }
   var s = state.brushSize;
   var cfg = getSandConfig();
 
@@ -523,6 +692,7 @@ function placeObject(idx, x, y) {
   };
   state.objects.push(obj);
   drawObject(obj);
+  Sound.place();
   saveUndo();
 }
 
@@ -547,6 +717,7 @@ function saveUndo() {
 function undo() {
   if (state.undoStack.length <= 1) return;
   state.undoStack.pop();
+  Sound.undo();
   restoreFromData(state.undoStack[state.undoStack.length - 1]);
 }
 
@@ -564,10 +735,12 @@ function clearCanvas() {
   if (state.objects.length === 0 && state.undoStack.length <= 1) return;
   state.objects = [];
   state.undoStack = [];
+  Sound.clear();
   resetCanvas();
 }
 
 function saveImage() {
+  Sound.save();
   var link = document.createElement('a');
   link.download = 'drawingsand-' + Date.now() + '.png';
   link.href = canvas.toDataURL('image/png');
@@ -576,6 +749,7 @@ function saveImage() {
 
 // ─── Wave Animation ────────────────────────────────────────────────────────
 function waveAnimation() {
+  Sound.wave();
   var w = canvas._w, h = canvas._h;
   var startTime = Date.now();
   var duration = 3000; // ms
