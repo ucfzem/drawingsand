@@ -84,6 +84,8 @@ h1 span { color: #e8c56d; }
   transition: background 0.2s;
   flex-shrink: 0;
 }
+.toast { position:fixed; bottom:60px; left:50%; transform:translateX(-50%); background:#e8c56d; color:#1a1a2e; padding:8px 20px; border-radius:20px; font-weight:600; font-size:0.85rem; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:10; white-space:nowrap; }
+.toast.show { opacity:1; }
 .icon-btn:hover { background: #3a3a5a; }
 .icon-btn:active { background: #4a4a6a; }
 .icon-btn.active { background: #e8c56d; color: #1a1a2e; }
@@ -203,6 +205,8 @@ canvas {
 
 <div class="objects-tray" id="objectsTray"></div>
 
+<div class="toast" id="toast"></div>
+
 <script>
 // ─── Sand Types ───────────────────────────────────────────────────────────
 var SANDS = [
@@ -249,7 +253,6 @@ var canvas, ctx, wrapper;
 var isDrawing = false;
 var lastX, lastY;
 var dpr = 1;
-var soundThrottle = 0;
 var soundThrottle = 0;
 
 // ─── Sound Engine ─────────────────────────────────────────────────────────
@@ -444,6 +447,7 @@ function init() {
   document.getElementById('saveBtn').addEventListener('click', function(){ Sound.click(); saveImage(); });
 
   resize();
+  saveUndo();
   window.addEventListener('resize', resize);
 
   // Pointer events
@@ -472,6 +476,7 @@ function selectSand(i) {
     b.classList.toggle('active', idx === i);
   });
   resetCanvas();
+  saveUndo();
 }
 
 // ─── Objects UI ───────────────────────────────────────────────────────────
@@ -519,6 +524,33 @@ function resize() {
 
 function getSandConfig() { return SANDS[state.sandIdx]; }
 
+var _sandTextures = {};
+
+function getSandTexture(cfg) {
+  if (_sandTextures[cfg.id]) return _sandTextures[cfg.id];
+  var size = 256;
+  var oc = document.createElement('canvas');
+  oc.width = size;
+  oc.height = size;
+  var octx = oc.getContext('2d');
+  var imgData = octx.getImageData(0, 0, size, size);
+  var d = imgData.data;
+  var base = hexToRgb(cfg.base);
+  var grain = hexToRgb(cfg.grain);
+  for (var i = 0; i < d.length; i += 4) {
+    var noise = (Math.random() - 0.5) * 30;
+    var useGrain = Math.random() < 0.3;
+    var c = useGrain ? grain : base;
+    d[i]     = clamp(c.r + noise + (Math.random() - 0.5) * 15);
+    d[i + 1] = clamp(c.g + noise + (Math.random() - 0.5) * 15);
+    d[i + 2] = clamp(c.b + noise + (Math.random() - 0.5) * 15);
+    d[i + 3] = 255;
+  }
+  octx.putImageData(imgData, 0, 0);
+  _sandTextures[cfg.id] = oc;
+  return oc;
+}
+
 function resetCanvas() {
   var cfg = getSandConfig();
   var w = canvas._w, h = canvas._h;
@@ -527,26 +559,14 @@ function resetCanvas() {
   drawSandLayer(cfg, w, h);
   // Redraw placed objects
   state.objects.forEach(function(obj) { drawObject(obj); });
-  saveUndo();
 }
 
 function drawSandLayer(cfg, w, h) {
-  var imageData = ctx.getImageData(0, 0, w * dpr, h * dpr);
-  var data = imageData.data;
-  var base = hexToRgb(cfg.base);
-  var grain = hexToRgb(cfg.grain);
-
-  for (var i = 0; i < data.length; i += 4) {
-    var noise = (Math.random() - 0.5) * 30;
-    var useGrain = Math.random() < 0.3;
-    var c = useGrain ? grain : base;
-    data[i]     = clamp(c.r + noise + (Math.random() - 0.5) * 15);
-    data[i + 1] = clamp(c.g + noise + (Math.random() - 0.5) * 15);
-    data[i + 2] = clamp(c.b + noise + (Math.random() - 0.5) * 15);
-    data[i + 3] = 255;
-  }
-  ctx.putImageData(imageData, 0, 0, 0, 0, w * dpr, h * dpr);
-  // Also draw some larger grain spots
+  var tex = getSandTexture(cfg);
+  var pattern = ctx.createPattern(tex, 'repeat');
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0, 0, w, h);
+  // Larger grain spots for variety
   for (var j = 0; j < 200; j++) {
     var x = Math.random() * w, y = Math.random() * h;
     var r = 1 + Math.random() * 2;
@@ -739,9 +759,10 @@ function undo() {
 function restoreFromData(dataUrl) {
   var img = new Image();
   img.onload = function() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, canvas._w, canvas._h);
-    ctx.drawImage(img, 0, 0, canvas._w * dpr, canvas._h * dpr, 0, 0, canvas._w, canvas._h);
   };
   img.src = dataUrl;
 }
@@ -752,6 +773,14 @@ function clearCanvas() {
   state.undoStack = [];
   Sound.clear();
   resetCanvas();
+}
+
+function showToast(msg, duration) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._hide);
+  el._hide = setTimeout(function() { el.classList.remove('show'); }, duration || 2000);
 }
 
 function saveImage() {
@@ -840,6 +869,7 @@ function waveAnimation() {
       state.objects = [];
       state.undoStack = [];
       resetCanvas();
+      showToast('🌊 Sable lavé par la vague !', 2500);
     }
   }
 
