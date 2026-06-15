@@ -42,7 +42,7 @@ header {
   flex-wrap: wrap;
   gap: 4px;
 }
-h1 { font-size: clamp(1rem, 3.5vw, 1.4rem); font-weight: 700; letter-spacing: -0.5px; white-space: nowrap; }
+h1 { font-size: clamp(1rem, 3.5vw, 1.4rem); font-weight: 700; letter-spacing: -0.5px; white-space: nowrap; display:flex; align-items:center; gap:6px; }
 h1 span { color: #e8c56d; }
 .toolbar {
   width: 100%;
@@ -83,12 +83,14 @@ h1 span { color: #e8c56d; }
   justify-content: center;
   transition: background 0.2s;
   flex-shrink: 0;
+  padding:0;
 }
 .toast { position:fixed; bottom:60px; left:50%; transform:translateX(-50%); background:#e8c56d; color:#1a1a2e; padding:8px 20px; border-radius:20px; font-weight:600; font-size:0.85rem; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:10; white-space:nowrap; }
 .toast.show { opacity:1; }
 .icon-btn:hover { background: #3a3a5a; }
 .icon-btn:active { background: #4a4a6a; }
 .icon-btn.active { background: #e8c56d; color: #1a1a2e; }
+.icon-btn svg { width:18px; height:18px; display:block; }
 .canvas-wrapper {
   flex: 1;
   width: 100%;
@@ -179,14 +181,21 @@ canvas {
 <body>
 
 <header>
-  <h1>🏖️ <span>Drawing</span>Sand</h1>
+  <h1>
+    <svg viewBox="0 0 20 20" width="22" height="22" fill="none" stroke="#e8c56d" stroke-width="1.5"><circle cx="10" cy="10" r="4" fill="#e8c56d" stroke="none"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4 4l1.5 1.5M14.5 14.5l1.5 1.5M4 16l1.5-1.5M14.5 5.5L16 4" stroke="#e8c56d"/></svg>
+    <span>Drawing</span>Sand
+  </h1>
   <div style="display:flex;gap:6px;align-items:center;">
-    <span style="font-size:0.7rem;color:#666;display:flex;align-items:center;gap:4px;">🖌️ <span id="brushSizeLabel">12</span></span>
+    <span style="font-size:0.7rem;color:#666;display:flex;align-items:center;gap:4px;">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="#666" stroke-width="1.2"><circle cx="8" cy="8" r="5"/><path d="M8 3v2M8 11v2M3 8h2M11 8h2"/></svg>
+      <span id="brushSizeLabel">12</span>
+    </span>
     <input type="range" id="brushSlider" min="4" max="40" value="12" style="width:60px;">
-    <button class="icon-btn" id="undoBtn" title="Annuler">↩️</button>
-    <button class="icon-btn" id="clearBtn" title="Effacer">🗑️</button>
-    <button class="icon-btn" id="waveBtn" title="Vague de mer">🌊</button>
-    <button class="icon-btn" id="saveBtn" title="Sauvegarder">💾</button>
+    <button class="icon-btn" id="undoBtn" title="Annuler"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7l3-3v2a5 5 0 1 1-3 4"/><path d="M3 7h4"/></svg></button>
+    <button class="icon-btn" id="clearBtn" title="Effacer"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 5h10l-1 9H4z"/><path d="M6 3h4l1 2H5z"/></svg></button>
+    <button class="icon-btn" id="waveBtn" title="Vague de mer"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 9q3-4 6 0t6 0"/><path d="M1 12.5q3-4 6 0t6 0"/></svg></button>
+    <button class="icon-btn" id="ambientBtn" title="Son ambiant"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6 4v8a2 2 0 0 0 4 0V4a2 2 0 0 0-4 0z"/></svg></button>
+    <button class="icon-btn" id="saveBtn" title="Sauvegarder / Partager"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="currentColor"/><rect x="5" y="8" width="5" height="5" fill="#1a1a2e" stroke="none"/><path d="M12 5h-2V2"/></svg></button>
     <a href="https://ucfzem.github.io/liens/" style="color:#555;text-decoration:none;font-size:0.65rem;margin-left:2px;">© ucfzem</a>
   </div>
 </header>
@@ -194,9 +203,13 @@ canvas {
 <div class="toolbar">
   <div class="sand-row" id="sandRow"></div>
   <div class="tool-divider"></div>
-  <button class="icon-btn active" id="drawMode" title="Dessiner">✏️</button>
-  <button class="icon-btn" id="eraseMode" title="Gomme">🧽</button>
-  <button class="icon-btn" id="dragMode" title="Déplacer">✋</button>
+  <button class="icon-btn active" id="drawMode" title="Dessiner"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2a2 2 0 0 1 2 2c0 .5-.2 1-.5 1.4L7 12l-4 1 1-4 7.5-7.5A2 2 0 0 1 11 2z"/><path d="M3 13l2-1" stroke-width="1"/></svg></button>
+  <button class="icon-btn" id="eraseMode" title="Gomme"><svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="3" width="11" height="9" rx="1"/><path d="M3 12h9v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg></button>
+  <button class="icon-btn" id="dragMode" title="Déplacer"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v12M2 8h12"/><path d="M5 5l3-3 3 3M5 11l3 3 3-3M5 8H2M11 8h3"/></svg></button>
+  <div class="tool-divider"></div>
+  <button class="icon-btn" id="qualityBtn" title="Mode basse qualité (économie batterie)">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><path d="M8 4v8M4 8h8"/></svg>
+  </button>
 </div>
 
 <div class="canvas-wrapper">
@@ -208,6 +221,8 @@ canvas {
 <div class="toast" id="toast"></div>
 
 <script>
+var ICONS = {};
+
 // ─── Sand Types ───────────────────────────────────────────────────────────
 var SANDS = [
   { id:'beach',   name:'Plage',       base:'#d4b886', dark:'#a0885a', grain:'#c9ac7a' },
@@ -242,11 +257,13 @@ var OBJECTS = [
 var state = {
   sandIdx: 0,
   brushSize: 12,
-  mode: 'draw', // 'draw' | 'drag'
+  mode: 'draw',
   selectedObj: null,
   objects: [],
   undoStack: [],
   maxUndo: 30,
+  lowQuality: false,
+  ambientOn: false,
 };
 
 var canvas, ctx, wrapper;
@@ -254,6 +271,8 @@ var isDrawing = false;
 var lastX, lastY;
 var dpr = 1;
 var soundThrottle = 0;
+var _ambientNode = null;
+var _ambientGain = null;
 
 // ─── Sound Engine ─────────────────────────────────────────────────────────
 var Sound = {};
@@ -291,7 +310,6 @@ var Sound = {};
     try {
       var ctx = getCtx();
       playNoise(ctx, 0.08, 0.04, 800, 'lowpass');
-      // add a thin scratch
       var src2 = ctx.createBufferSource();
       src2.buffer = noiseBuffer(ctx, 0.06);
       var fil2 = ctx.createBiquadFilter();
@@ -308,10 +326,7 @@ var Sound = {};
   };
 
   Sound.erase = function() {
-    try {
-      var ctx = getCtx();
-      playNoise(ctx, 0.1, 0.03, 1200, 'lowpass');
-    } catch(e){}
+    try { var ctx = getCtx(); playNoise(ctx, 0.1, 0.03, 1200, 'lowpass'); } catch(e){}
   };
 
   Sound.place = function() {
@@ -333,7 +348,6 @@ var Sound = {};
   Sound.wave = function() {
     try {
       var ctx = getCtx();
-      // Low rumble
       var osc = ctx.createOscillator();
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(80, ctx.currentTime);
@@ -344,7 +358,6 @@ var Sound = {};
       osc.connect(g); g.connect(ctx.destination);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 1.5);
-      // Shhh (wave wash)
       playNoise(ctx, 1.2, 0.06, 2500, 'lowpass');
       playNoise(ctx, 0.8, 0.04, 4000, 'bandpass');
     } catch(e){}
@@ -412,6 +425,53 @@ var Sound = {};
       osc.stop(ctx.currentTime + 0.04);
     } catch(e){}
   };
+
+  // ─── Ambient ASMR Ocean ──────────────────────────────────────────────
+  Sound.ambientStart = function() {
+    try {
+      var ctx = getCtx();
+      if (_ambientNode) return;
+      _ambientGain = ctx.createGain();
+      _ambientGain.gain.value = 0.08;
+      _ambientGain.connect(ctx.destination);
+
+      function scheduleWave() {
+        if (!_ambientGain) return;
+        if (ctx.currentTime > 100) return;
+        // Layered noise for surf sound
+        var n1 = ctx.createBufferSource();
+        n1.buffer = noiseBuffer(ctx, 2 + Math.random());
+        var f1 = ctx.createBiquadFilter();
+        f1.type = 'lowpass';
+        f1.frequency.value = 800 + Math.random() * 400;
+        n1.connect(f1); f1.connect(_ambientGain);
+        n1.start(ctx.currentTime);
+        n1.stop(ctx.currentTime + 2 + Math.random());
+
+        var n2 = ctx.createBufferSource();
+        n2.buffer = noiseBuffer(ctx, 1.5 + Math.random());
+        var f2 = ctx.createBiquadFilter();
+        f2.type = 'bandpass';
+        f2.frequency.value = 2500 + Math.random() * 1500;
+        f2.Q.value = 1;
+        n2.connect(f2); f2.connect(_ambientGain);
+        n2.start(ctx.currentTime + 0.3);
+        n2.stop(ctx.currentTime + 1.8 + Math.random());
+
+        var delay = 2000 + Math.random() * 4000;
+        _ambientNode = setTimeout(scheduleWave, delay);
+      }
+      scheduleWave();
+    } catch(e){}
+  };
+
+  Sound.ambientStop = function() {
+    if (_ambientNode) { clearTimeout(_ambientNode); _ambientNode = null; }
+    if (_ambientGain) {
+      try { _ambientGain.disconnect(); } catch(e){}
+      _ambientGain = null;
+    }
+  };
 })();
 
 // ─── Init ─────────────────────────────────────────────────────────────────
@@ -428,12 +488,13 @@ function init() {
     document.getElementById('brushSizeLabel').textContent = state.brushSize;
   });
 
-  var modes = ['drawMode', 'eraseMode', 'dragMode'];
   function setMode(id, mode, cursor) {
     document.getElementById(id).addEventListener('click', function() {
       Sound.click();
       state.mode = mode;
-      modes.forEach(function(m) { document.getElementById(m).classList.toggle('active', m === id); });
+      ['drawMode','eraseMode','dragMode'].forEach(function(m) {
+        document.getElementById(m).classList.toggle('active', m === id);
+      });
       canvas.style.cursor = cursor;
     });
   }
@@ -445,11 +506,12 @@ function init() {
   document.getElementById('clearBtn').addEventListener('click', function(){ Sound.click(); clearCanvas(); });
   document.getElementById('waveBtn').addEventListener('click', function(){ Sound.click(); waveAnimation(); });
   document.getElementById('saveBtn').addEventListener('click', function(){ Sound.click(); saveImage(); });
+  document.getElementById('qualityBtn').addEventListener('click', function(){ Sound.click(); toggleQuality(); });
+  document.getElementById('ambientBtn').addEventListener('click', function(){ Sound.click(); toggleAmbient(); });
 
   resize();
   window.addEventListener('resize', resize);
 
-  // Pointer events
   canvas.addEventListener('pointerdown', onPointerDown);
   canvas.addEventListener('pointermove', onPointerMove);
   canvas.addEventListener('pointerup', onPointerUp);
@@ -502,13 +564,33 @@ function selectObject(i) {
   });
 }
 
+// ─── Quality Toggle ──────────────────────────────────────────────────────
+function toggleQuality() {
+  state.lowQuality = !state.lowQuality;
+  document.getElementById('qualityBtn').classList.toggle('active', state.lowQuality);
+  showToast(state.lowQuality ? '🔋 Mode éco activé' : '⚡ Qualité normale');
+  resize();
+}
+
+// ─── Ambient Toggle ──────────────────────────────────────────────────────
+function toggleAmbient() {
+  state.ambientOn = !state.ambientOn;
+  document.getElementById('ambientBtn').classList.toggle('active', state.ambientOn);
+  if (state.ambientOn) {
+    Sound.ambientStart();
+    showToast('🌊 Vagues d\'ambiance...', 1500);
+  } else {
+    Sound.ambientStop();
+  }
+}
+
 // ─── Canvas ───────────────────────────────────────────────────────────────
 function resize() {
   var rect = wrapper.getBoundingClientRect();
   var w = rect.width - 2;
   var h = rect.height - 2;
 
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  dpr = Math.min(window.devicePixelRatio || 1, state.lowQuality ? 1 : 2);
   canvas.width = w * dpr;
   canvas.height = h * dpr;
   canvas.style.width = w + 'px';
@@ -529,7 +611,6 @@ function resetCanvas(skipUndo) {
   ctx.fillStyle = cfg.dark;
   ctx.fillRect(0, 0, w, h);
   drawSandLayer(cfg, w, h);
-  // Redraw placed objects
   state.objects.forEach(function(obj) { drawObject(obj); });
   if (!skipUndo) saveUndo();
 }
@@ -540,8 +621,9 @@ function drawSandLayer(cfg, w, h) {
   var base = hexToRgb(cfg.base);
   var grain = hexToRgb(cfg.grain);
   var pw = w * dpr;
-  for (var py = 0; py < h * dpr; py += 2) {
-    for (var px = 0; px < pw; px += 2) {
+  var step = state.lowQuality ? 4 : 2;
+  for (var py = 0; py < h * dpr; py += step) {
+    for (var px = 0; px < pw; px += step) {
       var noise = (Math.random() - 0.5) * 30;
       var useGrain = Math.random() < 0.3;
       var c = useGrain ? grain : base;
@@ -549,8 +631,8 @@ function drawSandLayer(cfg, w, h) {
       var rr = clamp(c.r + noise + jr);
       var gg = clamp(c.g + noise + jr);
       var bb = clamp(c.b + noise + jr);
-      for (var dy = 0; dy < 2 && py + dy < h * dpr; dy++) {
-        for (var dx = 0; dx < 2 && px + dx < pw; dx++) {
+      for (var dy = 0; dy < step && py + dy < h * dpr; dy++) {
+        for (var dx = 0; dx < step && px + dx < pw; dx++) {
           var idx = ((py + dy) * pw + (px + dx)) * 4;
           data[idx] = rr; data[idx+1] = gg; data[idx+2] = bb; data[idx+3] = 255;
         }
@@ -558,8 +640,7 @@ function drawSandLayer(cfg, w, h) {
     }
   }
   ctx.putImageData(imageData, 0, 0, 0, 0, w * dpr, h * dpr);
-  // Also draw some larger grain spots
-  for (var j = 0; j < 200; j++) {
+  for (var j = 0; j < (state.lowQuality ? 80 : 200); j++) {
     var x = Math.random() * w, y = Math.random() * h;
     var r = 1 + Math.random() * 2;
     ctx.globalAlpha = 0.3 + Math.random() * 0.4;
@@ -593,9 +674,7 @@ function onPointerDown(e) {
     lastX = pos.x; lastY = pos.y;
     drawAt(pos.x, pos.y, true);
   } else if (state.mode === 'drag') {
-    // find object at position
     var pos = getPos(e);
-    // check if clicked on a placed object
     for (var i = state.objects.length - 1; i >= 0; i--) {
       var obj = state.objects[i];
       var dx = pos.x - obj.x, dy = pos.y - obj.y;
@@ -606,7 +685,6 @@ function onPointerDown(e) {
         return;
       }
     }
-    // else place object if selected
     if (state.selectedObj !== null) {
       placeObject(state.selectedObj, pos.x, pos.y);
     }
@@ -640,7 +718,6 @@ function onPointerUp(e) {
 }
 
 function drawAt(x, y, dot) {
-  // Throttled sound
   var now = Date.now();
   if (now - soundThrottle > 80) {
     soundThrottle = now;
@@ -651,7 +728,6 @@ function drawAt(x, y, dot) {
   var cfg = getSandConfig();
 
   if (state.mode === 'erase') {
-    // Paint sand grains to restore the surface
     var base = hexToRgb(cfg.base);
     var grain = hexToRgb(cfg.grain);
     for (var e = 0; e < (dot ? 25 : 10); e++) {
@@ -671,7 +747,6 @@ function drawAt(x, y, dot) {
 
   var dark = hexToRgb(cfg.dark);
 
-  // Main dig
   ctx.globalCompositeOperation = 'source-over';
   for (var i = 0; i < (dot ? 20 : 8); i++) {
     var ox = (Math.random() - 0.5) * s * 0.8;
@@ -683,7 +758,6 @@ function drawAt(x, y, dot) {
     ctx.arc(x + ox, y + oy, r, 0, Math.PI * 2);
     ctx.fill();
   }
-  // Edge pile (lighter)
   for (var j = 0; j < 5; j++) {
     var a = Math.random() * Math.PI * 2;
     var dist = s * 0.3 + Math.random() * s * 0.4;
@@ -777,10 +851,22 @@ function showToast(msg, duration) {
 
 function saveImage() {
   Sound.save();
-  var link = document.createElement('a');
-  link.download = 'drawingsand-' + Date.now() + '.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  var blob = canvas.toBlob ? canvas.toBlob(function(b) {
+    if (navigator.share && navigator.canShare && navigator.canShare({files:[new File([b], 'drawingsand.png', {type:'image/png'})]})) {
+      navigator.share({ files: [new File([b], 'drawingsand.png', {type:'image/png'})], title: 'DrawingSand' }).catch(function(){});
+    } else {
+      var link = document.createElement('a');
+      link.download = 'drawingsand-' + Date.now() + '.png';
+      link.href = URL.createObjectURL(b);
+      link.click();
+      setTimeout(function(){ URL.revokeObjectURL(link.href); }, 1000);
+    }
+  }, 'image/png') : function() {
+    var link = document.createElement('a');
+    link.download = 'drawingsand-' + Date.now() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
 }
 
 // ─── Wave Animation ────────────────────────────────────────────────────────
@@ -788,11 +874,10 @@ function waveAnimation() {
   Sound.wave();
   var w = canvas._w, h = canvas._h;
   var startTime = Date.now();
-  var duration = 3000; // ms
+  var duration = 3000;
   var waveImgData = ctx.getImageData(0, 0, w * dpr, h * dpr);
 
   function foamBubbles(progress) {
-    // Draw foam bubbles at the wave's leading edge
     var waveX = w * progress;
     var count = 20 + Math.floor(Math.random() * 15);
     for (var i = 0; i < count; i++) {
@@ -808,7 +893,6 @@ function waveAnimation() {
   }
 
   function drawWaterSlice(x, alpha) {
-    // Draw a vertical strip of water
     var grad = ctx.createLinearGradient(0, 0, 0, h);
     var a = alpha * 0.6;
     grad.addColorStop(0, 'rgba(30,120,180,' + (a * 0.7) + ')');
@@ -817,7 +901,6 @@ function waveAnimation() {
     grad.addColorStop(1, 'rgba(10,90,140,' + (a * 0.8) + ')');
     ctx.fillStyle = grad;
     ctx.fillRect(x, 0, 2, h);
-    // white highlights
     if (Math.random() < 0.15) {
       var y = Math.random() * h;
       ctx.fillStyle = 'rgba(255,255,255,' + (alpha * 0.15) + ')';
@@ -825,40 +908,29 @@ function waveAnimation() {
     }
   }
 
-  // Save state before wave
-  var beforeWave = canvas.toDataURL();
   state.objects = [];
   state.undoStack = [];
 
   function animateWave() {
     var elapsed = Date.now() - startTime;
-    var progress = Math.min(elapsed / duration, 1.3); // overshoot slightly
-
-    // Ease-in-out
-    var eased = progress < 0.5
-      ? 2 * progress * progress
-      : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+    var progress = Math.min(elapsed / duration, 1.3);
+    var eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
     var waveX = w * Math.min(eased, 1);
 
-    // Restore original image, then apply wave progressively
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.putImageData(waveImgData, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Draw water over the left portion (cleared area)
     for (var x = 0; x < waveX && x < w; x += 2) {
       var dist = x / waveX;
-      var alpha = 0.5 + 0.5 * (1 - dist); // stronger near the edge
+      var alpha = 0.5 + 0.5 * (1 - dist);
       drawWaterSlice(x, alpha);
     }
-
-    // Draw foam at the leading edge
     foamBubbles(Math.min(eased, 1));
 
     if (progress < 1.1) {
       requestAnimationFrame(animateWave);
     } else {
-      // Reset to fresh sand
       state.objects = [];
       state.undoStack = [];
       resetCanvas();
@@ -869,7 +941,6 @@ function waveAnimation() {
   animateWave();
 }
 
-// ─── Start ────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
