@@ -447,7 +447,6 @@ function init() {
   document.getElementById('saveBtn').addEventListener('click', function(){ Sound.click(); saveImage(); });
 
   resize();
-  saveUndo();
   window.addEventListener('resize', resize);
 
   // Pointer events
@@ -476,7 +475,6 @@ function selectSand(i) {
     b.classList.toggle('active', idx === i);
   });
   resetCanvas();
-  saveUndo();
 }
 
 // ─── Objects UI ───────────────────────────────────────────────────────────
@@ -519,39 +517,13 @@ function resize() {
   canvas._w = w;
   canvas._h = h;
 
-  resetCanvas();
+  resetCanvas(true);
+  state.undoStack = [canvas.toDataURL()];
 }
 
 function getSandConfig() { return SANDS[state.sandIdx]; }
 
-var _sandTextures = {};
-
-function getSandTexture(cfg) {
-  if (_sandTextures[cfg.id]) return _sandTextures[cfg.id];
-  var size = 256;
-  var oc = document.createElement('canvas');
-  oc.width = size;
-  oc.height = size;
-  var octx = oc.getContext('2d');
-  var imgData = octx.getImageData(0, 0, size, size);
-  var d = imgData.data;
-  var base = hexToRgb(cfg.base);
-  var grain = hexToRgb(cfg.grain);
-  for (var i = 0; i < d.length; i += 4) {
-    var noise = (Math.random() - 0.5) * 30;
-    var useGrain = Math.random() < 0.3;
-    var c = useGrain ? grain : base;
-    d[i]     = clamp(c.r + noise + (Math.random() - 0.5) * 15);
-    d[i + 1] = clamp(c.g + noise + (Math.random() - 0.5) * 15);
-    d[i + 2] = clamp(c.b + noise + (Math.random() - 0.5) * 15);
-    d[i + 3] = 255;
-  }
-  octx.putImageData(imgData, 0, 0);
-  _sandTextures[cfg.id] = oc;
-  return oc;
-}
-
-function resetCanvas() {
+function resetCanvas(skipUndo) {
   var cfg = getSandConfig();
   var w = canvas._w, h = canvas._h;
   ctx.fillStyle = cfg.dark;
@@ -559,14 +531,34 @@ function resetCanvas() {
   drawSandLayer(cfg, w, h);
   // Redraw placed objects
   state.objects.forEach(function(obj) { drawObject(obj); });
+  if (!skipUndo) saveUndo();
 }
 
 function drawSandLayer(cfg, w, h) {
-  var tex = getSandTexture(cfg);
-  var pattern = ctx.createPattern(tex, 'repeat');
-  ctx.fillStyle = pattern;
-  ctx.fillRect(0, 0, w, h);
-  // Larger grain spots for variety
+  var imageData = ctx.getImageData(0, 0, w * dpr, h * dpr);
+  var data = imageData.data;
+  var base = hexToRgb(cfg.base);
+  var grain = hexToRgb(cfg.grain);
+  var pw = w * dpr;
+  for (var py = 0; py < h * dpr; py += 2) {
+    for (var px = 0; px < pw; px += 2) {
+      var noise = (Math.random() - 0.5) * 30;
+      var useGrain = Math.random() < 0.3;
+      var c = useGrain ? grain : base;
+      var jr = (Math.random() - 0.5) * 15;
+      var rr = clamp(c.r + noise + jr);
+      var gg = clamp(c.g + noise + jr);
+      var bb = clamp(c.b + noise + jr);
+      for (var dy = 0; dy < 2 && py + dy < h * dpr; dy++) {
+        for (var dx = 0; dx < 2 && px + dx < pw; dx++) {
+          var idx = ((py + dy) * pw + (px + dx)) * 4;
+          data[idx] = rr; data[idx+1] = gg; data[idx+2] = bb; data[idx+3] = 255;
+        }
+      }
+    }
+  }
+  ctx.putImageData(imageData, 0, 0, 0, 0, w * dpr, h * dpr);
+  // Also draw some larger grain spots
   for (var j = 0; j < 200; j++) {
     var x = Math.random() * w, y = Math.random() * h;
     var r = 1 + Math.random() * 2;
@@ -849,8 +841,9 @@ function waveAnimation() {
     var waveX = w * Math.min(eased, 1);
 
     // Restore original image, then apply wave progressively
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.putImageData(waveImgData, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Draw water over the left portion (cleared area)
     for (var x = 0; x < waveX && x < w; x += 2) {
